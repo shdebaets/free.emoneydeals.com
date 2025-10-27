@@ -97,11 +97,11 @@ export default function BonusCall() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
-          Book Your Free{" "}
+          Book Your{" "}
           <span className="bg-gradient-to-r from-brand-purple to-brand-magenta bg-clip-text text-transparent">
-            Bonus Amazon Reselling
+            Free Bonus Amazon Reselling
           </span>
-          1 on 1 Call Now 
+           1 on 1 Call Now 
         </motion.h1>
 
         <p className="mt-3 text-center text-sm text-white/80">
