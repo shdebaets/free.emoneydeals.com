@@ -97,10 +97,11 @@ export default function BonusCall() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
-          Welcome to{" "}
+          Book Your Free{" "}
           <span className="bg-gradient-to-r from-brand-purple to-brand-magenta bg-clip-text text-transparent">
-            eMoney
+            Bonus Amazon Reselling
           </span>
+          1 on 1 Call Now 
         </motion.h1>
 
         <p className="mt-3 text-center text-sm text-white/80">
@@ -130,9 +131,9 @@ export default function BonusCall() {
           </div>
 
           <div className="mt-3 grid gap-2 text-sm text-white/80">
-            <div>✅ Exact steps to find live penny items near you</div>
-            <div>✅ How alerts + aisles = speed (and why that matters)</div>
-            <div>✅ What to do on the floor so you don’t miss</div>
+            <div>✅ Personalized steps to resell on the most powerful platform</div>
+            <div>✅ Accelerate your progress by learning to resell on Amazon</div>
+            <div>✅ Skip the guesswork</div>
           </div>
 
           <button
