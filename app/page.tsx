@@ -70,7 +70,7 @@ export default function BonusCall() {
             <div className="flex items-center gap-2">
               <div className="h-6 w-6 shrink-0 rounded-md bg-gradient-to-br from-brand-purple to-brand-magenta" />
               <div className="text-xs font-semibold text-white/85">
-                Bonus Call — eMoney
+                Free Bonus Call | eMoney
               </div>
             </div>
 
