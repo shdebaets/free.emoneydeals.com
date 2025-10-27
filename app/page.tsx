@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import CalendlyInline from "@/components/CalendlyInline";
 import WistiaVSL from "@/components/WistiaVSL";
 
-const REQUIRED_SECONDS = 120; // e.g. 60 seconds = 1 minute
+const REQUIRED_SECONDS = 75; // e.g. 60 seconds = 1 minute
 
 function formatMMSS(s: number) {
   const clamped = Math.max(0, Math.ceil(s));
