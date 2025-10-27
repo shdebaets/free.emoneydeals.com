@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  /* ink scale */
+  --color-ink-50: #f7f7fb;
+  --color-ink-100: #efeff6;
+  --color-ink-200: #e3e3ef;
+  --color-ink-300: #cfcfe2;
+  --color-ink-400: #a4a3c5;
+  --color-ink-500: #7c79a5;
+  --color-ink-600: #5c5986;
+  --color-ink-700: #47446b;
+  --color-ink-800: #332f50;
+  --color-ink-900: #252341;
+  --color-ink-950: #14122a;
+
+  /* brand */
+  --color-brand-purple: #8E5BFF;
+  --color-brand-magenta: #FF2E8F;
+
+  /* shadow */
+  --shadow-glow: 0 0 40px rgba(168, 85, 247, .20);
+}
+
+:root {
+  --a1: 255, 46, 143;
+  /* magenta */
+  --a2: 142, 91, 255;
+  /* purple */
+  --a3: 0, 219, 222;
+  /* teal */
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-ink-950 text-white;
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(var(--a1), .25), transparent 60%),
+    radial-gradient(55rem 35rem at -10% -15%, rgba(var(--a2), .25), transparent 60%),
+    radial-gradient(35rem 30rem at 50% 110%, rgba(var(--a3), .18), transparent 60%),
+    linear-gradient(180deg, #0f0e19 0%, #0a0a13 100%);
+  background-attachment: fixed;
+}
+
+.container-tight {
+  @apply mx-auto w-full max-w-[760px] px-4;
+}
+
+.card {
+  @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-glow;
+}
+
+.input {
+  @apply w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2.5 text-white placeholder-white/50 outline-none focus:border-brand-purple/60 focus:ring-2 focus:ring-brand-purple/30 transition;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 font-semibold transition active:scale-95 cursor-pointer hover:opacity-70;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-brand-purple to-brand-magenta hover:opacity-90;
+}
+
+.badge {
+  @apply rounded-md border border-white/10 bg-white/10 px-2 py-0.5 text-[11px] tracking-wider uppercase;
+}
