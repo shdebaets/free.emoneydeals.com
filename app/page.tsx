@@ -111,8 +111,8 @@ export default function BonusCall() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <WistiaVSL
-                mediaId="i5voqxuarc"
-                caption="How members flip penny deals into daily profit"
+                mediaId="f783avi3bj"
+                caption="How members scale up to $20,000+/month with Amazon Reselling"
                 onEvents={{
                   play: () => {
                     setIsPlaying(true);
