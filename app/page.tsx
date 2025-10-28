@@ -2,16 +2,44 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import CalendlyInline from "@/components/CalendlyInline";
 import WistiaVSL from "@/components/WistiaVSL";
 
-const REQUIRED_SECONDS = 75; // e.g. 60 seconds = 1 minute
+// ——— CONFIG ———
+const REQUIRED_SECONDS = 75;
 
+// ——— UTILS ———
 function formatMMSS(s: number) {
   const clamped = Math.max(0, Math.ceil(s));
   const m = Math.floor(clamped / 60);
   const sec = clamped % 60;
   return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+// ——— TYPEFORM INLINE (no external package needed) ———
+function TypeformInline({ formId }: { formId: string }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // Load once
+    const existing = document.querySelector<HTMLScriptElement>("script[data-tf-embed]");
+    if (!existing) {
+      const s = document.createElement("script");
+      s.src = "//embed.typeform.com/next/embed.js";
+      s.async = true;
+      s.defer = true;
+      s.setAttribute("data-tf-embed", "1");
+      document.body.appendChild(s);
+    }
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="min-h-[700px] w-full"
+      // matches your provided embed
+      data-tf-live={formId}
+    />
+  );
 }
 
 export default function BonusCall() {
@@ -20,34 +48,64 @@ export default function BonusCall() {
 
   const [watchedSeconds, setWatchedSeconds] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [lastPlayAt, setLastPlayAt] = useState<number | null>(null);
+
+  // timing refs to avoid re-running effects each frame
+  const rafRef = useRef<number | null>(null);
+  const lastTickRef = useRef<number | null>(null);
+  const isPageHiddenRef = useRef<boolean>(false);
 
   const remaining = Math.max(0, REQUIRED_SECONDS - watchedSeconds);
   const unlocked = remaining <= 0;
 
+  // RAF ticker that DOES NOT update any effect deps per frame
   useEffect(() => {
-    if (!isPlaying || lastPlayAt == null || unlocked) return;
+    if (!isPlaying || unlocked) return;
 
-    const tick = () => {
-      const now = performance.now();
-      const delta = (now - lastPlayAt) / 1000;
-      setWatchedSeconds((prev) => {
-        const next = prev + delta;
-        return next >= REQUIRED_SECONDS ? REQUIRED_SECONDS : next;
-      });
-      setLastPlayAt(now);
-      raf = requestAnimationFrame(tick);
+    const tick = (now: number) => {
+      if (isPageHiddenRef.current) {
+        // don’t count background time
+        lastTickRef.current = now;
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      if (lastTickRef.current == null) {
+        lastTickRef.current = now;
+      } else {
+        const delta = (now - lastTickRef.current) / 1000;
+        lastTickRef.current = now;
+
+        // accumulate, stop at REQUIRED_SECONDS
+        setWatchedSeconds((prev) => {
+          const next = prev + delta;
+          return next >= REQUIRED_SECONDS ? REQUIRED_SECONDS : next;
+        });
+      }
+
+      if (!unlocked) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
     };
 
-    let raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [isPlaying, lastPlayAt, unlocked]);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      lastTickRef.current = null;
+    };
+  }, [isPlaying, unlocked]);
 
+  // Pause counting when tab is hidden
   useEffect(() => {
     const onVis = () => {
+      isPageHiddenRef.current = document.hidden;
       if (document.hidden) {
-        setIsPlaying(false);
-        setLastPlayAt(null);
+        // stop counting immediately
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+        lastTickRef.current = null;
+      } else {
+        // if video is still playing, RAF will restart via effect
       }
     };
     document.addEventListener("visibilitychange", onVis);
@@ -64,6 +122,7 @@ export default function BonusCall() {
 
   return (
     <main className="min-h-dvh pb-16">
+      {/* Sticky header */}
       <div className="sticky top-0 z-50 bg-transparent">
         <div className="container-tight pt-3">
           <div className="card flex items-center justify-between px-3 py-2">
@@ -90,6 +149,7 @@ export default function BonusCall() {
         </div>
       </div>
 
+      {/* Hero + VSL */}
       <section className="container-tight mt-8">
         <motion.h1
           className="text-center text-4xl font-black leading-tight"
@@ -100,8 +160,8 @@ export default function BonusCall() {
           Book Your{" "}
           <span className="bg-gradient-to-r from-brand-purple to-brand-magenta bg-clip-text text-transparent">
             Free Bonus Amazon Reselling
-          </span>
-           1 on 1 Call Now 
+          </span>{" "}
+          1 on 1 Call Now
         </motion.h1>
 
         <p className="mt-3 text-center text-sm text-white/80">
@@ -116,15 +176,18 @@ export default function BonusCall() {
                 caption="How members scale up to $20,000+/month with Amazon Reselling"
                 onEvents={{
                   play: () => {
-                    setIsPlaying(true);
-                    setLastPlayAt(performance.now());
+                    // start counting
+                    if (!isPlaying) {
+                      setIsPlaying(true);
+                      lastTickRef.current = null; // reset so first tick sets baseline
+                    }
                   },
                   pause: () => {
+                    // stop counting
                     setIsPlaying(false);
-                    setLastPlayAt(null);
+                    lastTickRef.current = null;
                   },
-                  quartile: (_pct) => {
-                  },
+                  quartile: (_pct) => {},
                 }}
               />
             </div>
@@ -151,6 +214,7 @@ export default function BonusCall() {
         </div>
       </section>
 
+      {/* Booking (Typeform) */}
       <section ref={bookRef} className="container-tight mt-8">
         <div className="card relative min-h-[700px] p-4">
           <h3 className="text-center text-lg font-semibold">Lock your bonus call</h3>
@@ -184,7 +248,8 @@ export default function BonusCall() {
           )}
 
           <div className={unlocked ? "" : "pointer-events-none blur-[1px]"}>
-            <CalendlyInline url="https://calendly.com/omarfakhoury01/30min?background_color=191822&text_color=ffffff&primary_color=ff2e8f" />
+            {/* Replace CalendlyInline with Typeform */}
+            <TypeformInline formId="01K8NV9S6T9VKEPWMEXDEXZTMR" />
           </div>
         </div>
       </section>
