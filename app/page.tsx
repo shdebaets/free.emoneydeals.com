@@ -35,7 +35,6 @@ function TypeformInline({ formId }: { formId: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // Load once
     const existing = document.querySelector<HTMLScriptElement>("script[data-tf-embed]");
     if (!existing) {
       const s = document.createElement("script");
@@ -51,7 +50,6 @@ function TypeformInline({ formId }: { formId: string }) {
     <div
       ref={containerRef}
       className="min-h-[700px] w-full"
-      // matches your provided embed
       data-tf-live={formId}
     />
   );
@@ -61,87 +59,35 @@ export default function BonusCall() {
   const bookRef = useRef<HTMLDivElement | null>(null);
   const vslRef = useRef<HTMLDivElement | null>(null);
 
-  const [watchedSeconds, setWatchedSeconds] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  // timing refs to avoid re-running effects each frame
-  const rafRef = useRef<number | null>(null);
-  const lastTickRef = useRef<number | null>(null);
-  const isPageHiddenRef = useRef<boolean>(false);
-
-  const remaining = Math.max(0, REQUIRED_SECONDS - watchedSeconds);
+  // ⬇️ NEW: simple wall-clock countdown (no video dependency)
+  const [remaining, setRemaining] = useState(REQUIRED_SECONDS);
   const unlocked = remaining <= 0;
+  const startAtRef = useRef<number | null>(null);
 
-  // Track scroll events
+  useEffect(() => {
+    startAtRef.current = Date.now();
+    const id = setInterval(() => {
+      if (!startAtRef.current) return;
+      const elapsed = Math.floor((Date.now() - startAtRef.current) / 1000);
+      setRemaining(Math.max(0, REQUIRED_SECONDS - elapsed));
+    }, 250); // smooth enough; uses wall clock so throttling won’t drift
+    return () => clearInterval(id);
+  }, []);
+
+  // Track scroll events (kept)
   useEffect(() => {
     let scrollTimeout: NodeJS.Timeout;
     const handleScroll = () => {
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         trackEvent("scroll");
-      }, 500); // Debounce to avoid too many events
+      }, 500);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, []);
-
-  // RAF ticker that DOES NOT update any effect deps per frame
-  useEffect(() => {
-    if (!isPlaying || unlocked) return;
-
-    const tick = (now: number) => {
-      if (isPageHiddenRef.current) {
-        // don't count background time
-        lastTickRef.current = now;
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      if (lastTickRef.current == null) {
-        lastTickRef.current = now;
-      } else {
-        const delta = (now - lastTickRef.current) / 1000;
-        lastTickRef.current = now;
-
-        // accumulate, stop at REQUIRED_SECONDS
-        setWatchedSeconds((prev) => {
-          const next = prev + delta;
-          return next >= REQUIRED_SECONDS ? REQUIRED_SECONDS : next;
-        });
-      }
-
-      if (!unlocked) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      lastTickRef.current = null;
-    };
-  }, [isPlaying, unlocked]);
-
-  // Pause counting when tab is hidden
-  useEffect(() => {
-    const onVis = () => {
-      isPageHiddenRef.current = document.hidden;
-      if (document.hidden) {
-        // stop counting immediately
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-        lastTickRef.current = null;
-      } else {
-        // if video is still playing, RAF will restart via effect
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
 
   const scrollToBooking = () => {
@@ -160,10 +106,7 @@ export default function BonusCall() {
 
   const handleGoBackToVideoClick = () => {
     trackEvent("go_back_to_video");
-    vslRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    vslRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handlePlayVideo = () => {
@@ -190,7 +133,7 @@ export default function BonusCall() {
               title={
                 unlocked
                   ? "Book now"
-                  : `Unlocks after ${formatMMSS(remaining)} of watch time`
+                  : `Unlocks in ${formatMMSS(remaining)}`
               }
             >
               {unlocked ? "Book now" : `Unlock in ${formatMMSS(remaining)}`}
@@ -226,19 +169,10 @@ export default function BonusCall() {
                 caption="How members scale up to $20,000+/month with Amazon Reselling"
                 onPlayClick={handlePlayVideo}
                 onEvents={{
-                  play: () => {
-                    // start counting
-                    if (!isPlaying) {
-                      setIsPlaying(true);
-                      lastTickRef.current = null; // reset so first tick sets baseline
-                    }
-                  },
-                  pause: () => {
-                    // stop counting
-                    setIsPlaying(false);
-                    lastTickRef.current = null;
-                  },
-                  quartile: (_pct) => { },
+                  // ⬇️ We keep these for analytics only; no timer control anymore
+                  play: () => trackEvent("wistia_play"),
+                  pause: () => trackEvent("wistia_pause"),
+                  quartile: (_pct) => {},
                 }}
               />
             </div>
@@ -277,9 +211,8 @@ export default function BonusCall() {
             <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-[rgb(0_0_0_/_0.6)] backdrop-blur-[2px]">
               <div className="mx-auto max-w-sm text-center">
                 <div className="text-sm text-white/80">
-                  Booking unlocks after{" "}
-                  <span className="font-semibold">{formatMMSS(remaining)}</span>{" "}
-                  more watch time.
+                  Booking unlocks in{" "}
+                  <span className="font-semibold">{formatMMSS(remaining)}</span>.
                 </div>
                 <div className="mt-3">
                   <button
@@ -294,7 +227,6 @@ export default function BonusCall() {
           )}
 
           <div className={unlocked ? "" : "pointer-events-none blur-[1px]"}>
-            {/* Replace CalendlyInline with Typeform */}
             <TypeformInline formId="01K8NV9S6T9VKEPWMEXDEXZTMR" />
           </div>
         </div>
