@@ -15,6 +15,21 @@ function formatMMSS(s: number) {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
+async function trackEvent(event: string) {
+  try {
+    await fetch("https://emoneydeals.com/api/web-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: window.location.href,
+        event,
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to track event:", error);
+  }
+}
+
 // ——— TYPEFORM INLINE (no external package needed) ———
 function TypeformInline({ formId }: { formId: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -57,13 +72,30 @@ export default function BonusCall() {
   const remaining = Math.max(0, REQUIRED_SECONDS - watchedSeconds);
   const unlocked = remaining <= 0;
 
+  // Track scroll events
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        trackEvent("scroll");
+      }, 500); // Debounce to avoid too many events
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);
+
   // RAF ticker that DOES NOT update any effect deps per frame
   useEffect(() => {
     if (!isPlaying || unlocked) return;
 
     const tick = (now: number) => {
       if (isPageHiddenRef.current) {
-        // don’t count background time
+        // don't count background time
         lastTickRef.current = now;
         rafRef.current = requestAnimationFrame(tick);
         return;
@@ -116,8 +148,26 @@ export default function BonusCall() {
     if (unlocked) {
       bookRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
+      trackEvent("unlock_in_button");
       vslRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  };
+
+  const handleKeepWatchingClick = () => {
+    trackEvent("keep_watching_to_unlock");
+    scrollToBooking();
+  };
+
+  const handleGoBackToVideoClick = () => {
+    trackEvent("go_back_to_video");
+    vslRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const handlePlayVideo = () => {
+    trackEvent("play_video_button");
   };
 
   return (
@@ -174,6 +224,7 @@ export default function BonusCall() {
               <WistiaVSL
                 mediaId="f783avi3bj"
                 caption="How members scale up to $20,000+/month with Amazon Reselling"
+                onPlayClick={handlePlayVideo}
                 onEvents={{
                   play: () => {
                     // start counting
@@ -187,7 +238,7 @@ export default function BonusCall() {
                     setIsPlaying(false);
                     lastTickRef.current = null;
                   },
-                  quartile: (_pct) => {},
+                  quartile: (_pct) => { },
                 }}
               />
             </div>
@@ -200,7 +251,7 @@ export default function BonusCall() {
           </div>
 
           <button
-            onClick={scrollToBooking}
+            onClick={handleKeepWatchingClick}
             className="btn btn-primary mt-4 w-full hover:shadow-glow"
           >
             {unlocked ? "Book your bonus call" : "Keep watching to unlock"}
@@ -219,7 +270,7 @@ export default function BonusCall() {
         <div className="card relative min-h-[700px] p-4">
           <h3 className="text-center text-lg font-semibold">Lock your bonus call</h3>
           <p className="mt-1 text-center text-sm text-white/70">
-            We’ll personalize your plan + answer questions.
+            We'll personalize your plan + answer questions.
           </p>
 
           {!unlocked && (
@@ -232,12 +283,7 @@ export default function BonusCall() {
                 </div>
                 <div className="mt-3">
                   <button
-                    onClick={() =>
-                      vslRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      })
-                    }
+                    onClick={handleGoBackToVideoClick}
                     className="btn btn-primary"
                   >
                     Go back to video

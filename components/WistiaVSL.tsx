@@ -18,6 +18,7 @@ type Props = {
     mediaId: string;
     caption?: string;
     posterUrl?: string;
+    onPlayClick?: () => void;
     onEvents?: {
         play?: () => void;
         pause?: () => void;
@@ -25,7 +26,7 @@ type Props = {
     };
 };
 
-export default function WistiaVSL({ mediaId, caption, posterUrl, onEvents }: Props) {
+export default function WistiaVSL({ mediaId, caption, posterUrl, onPlayClick, onEvents }: Props) {
     useWistiaScript();
     const [playing, setPlaying] = useState(false);
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -53,13 +54,20 @@ export default function WistiaVSL({ mediaId, caption, posterUrl, onEvents }: Pro
         });
     }, [playing, mediaId, onEvents]);
 
+    const handlePlayClick = () => {
+        if (onPlayClick) {
+            onPlayClick();
+        }
+        setPlaying(true);
+    };
+
     return (
         <div className="relative overflow-hidden rounded-xl border border-white/10">
             <div className="relative aspect-video w-full bg-black/40">
                 {!playing && (
                     <button
                         type="button"
-                        onClick={() => setPlaying(true)}
+                        onClick={handlePlayClick}
                         className="group absolute inset-0"
                         aria-label="Play video"
                     >
