@@ -59,7 +59,7 @@ export default function BonusCall() {
   const bookRef = useRef<HTMLDivElement | null>(null);
   const vslRef = useRef<HTMLDivElement | null>(null);
 
-  // ⬇️ NEW: simple wall-clock countdown (no video dependency)
+  // Simple wall-clock countdown
   const [remaining, setRemaining] = useState(REQUIRED_SECONDS);
   const unlocked = remaining <= 0;
   const startAtRef = useRef<number | null>(null);
@@ -70,7 +70,7 @@ export default function BonusCall() {
       if (!startAtRef.current) return;
       const elapsed = Math.floor((Date.now() - startAtRef.current) / 1000);
       setRemaining(Math.max(0, REQUIRED_SECONDS - elapsed));
-    }, 250); // smooth enough; uses wall clock so throttling won’t drift
+    }, 250);
     return () => clearInterval(id);
   }, []);
 
@@ -122,7 +122,7 @@ export default function BonusCall() {
             <div className="flex items-center gap-2">
               <div className="h-6 w-6 shrink-0 rounded-md bg-gradient-to-br from-brand-purple to-brand-magenta" />
               <div className="text-xs font-semibold text-white/85">
-                Free Bonus Call | eMoney
+                Stay in eMoney & Get 3 Days Free
               </div>
             </div>
 
@@ -132,11 +132,11 @@ export default function BonusCall() {
               aria-disabled={!unlocked}
               title={
                 unlocked
-                  ? "Book now"
+                  ? "Activate your 3 free days"
                   : `Unlocks in ${formatMMSS(remaining)}`
               }
             >
-              {unlocked ? "Book now" : `Unlock in ${formatMMSS(remaining)}`}
+              {unlocked ? "Activate 3 Free Days" : `Unlock in ${formatMMSS(remaining)}`}
             </button>
           </div>
         </div>
@@ -150,26 +150,28 @@ export default function BonusCall() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
         >
-          Book Your{" "}
+          Thinking Of Canceling?{" "}
           <span className="bg-gradient-to-r from-brand-purple to-brand-magenta bg-clip-text text-transparent">
-            Free Bonus Amazon Reselling
+            Watch This First
           </span>{" "}
-          1 on 1 Call Now
+          & Get <span className="text-brand-magenta">3 Extra Days Free</span>
         </motion.h1>
 
         <p className="mt-3 text-center text-sm text-white/80">
-          Watch the first minute to unlock your free bonus call.
+          Watch this short video to see how to actually use your membership. Once
+          the timer hits zero, you&apos;ll unlock a{" "}
+          <span className="font-semibold">3-day free extension</span> to stay in
+          the community instead of canceling.
         </p>
 
         <div ref={vslRef} className="card mt-5 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <WistiaVSL
-                mediaId="f783avi3bj"
-                caption="How members scale up to $20,000+/month with Amazon Reselling"
+                mediaId="gx53ks9jkf"
+                caption="How to use eMoney the right way so you actually get results"
                 onPlayClick={handlePlayVideo}
                 onEvents={{
-                  // ⬇️ We keep these for analytics only; no timer control anymore
                   play: () => trackEvent("wistia_play"),
                   pause: () => trackEvent("wistia_pause"),
                   quartile: (_pct) => {},
@@ -179,39 +181,40 @@ export default function BonusCall() {
           </div>
 
           <div className="mt-3 grid gap-2 text-sm text-white/80">
-            <div>✅ Personalized steps to resell on the most powerful platform</div>
-            <div>✅ Accelerate your progress by learning to resell on Amazon</div>
-            <div>✅ Skip the guesswork</div>
+            
           </div>
 
           <button
             onClick={handleKeepWatchingClick}
             className="btn btn-primary mt-4 w-full hover:shadow-glow"
           >
-            {unlocked ? "Book your bonus call" : "Keep watching to unlock"}
+            {unlocked ? "I Want My 3 Free Days & To Stay" : "Keep Watching To Unlock 3 Free Days"}
           </button>
 
           <p className="mt-2 text-center text-[11px] text-white/60">
             {unlocked
-              ? "You're unlocked—grab a time below."
-              : "We only unlock the booking after you catch the key setup steps."}
+              ? "You’ve unlocked your extension—confirm below to keep your access + get 3 days free."
+              : "To unlock your 3-day free extension, you need to finish the key parts of this video."}
           </p>
         </div>
       </section>
 
-      {/* Booking (Typeform) */}
+      {/* “Uncancel” / 3-Day Extension (Typeform) */}
       <section ref={bookRef} className="container-tight mt-8">
         <div className="card relative min-h-[700px] p-4">
-          <h3 className="text-center text-lg font-semibold">Lock your bonus call</h3>
+          <h3 className="text-center text-lg font-semibold">
+            Confirm You&apos;re Staying & Activate Your 3 Free Days
+          </h3>
           <p className="mt-1 text-center text-sm text-white/70">
-            We'll personalize your plan + answer questions.
+            Fill this out to keep your membership active, get 3 extra days for free,
+            and let us know what support you need to actually get results.
           </p>
 
           {!unlocked && (
             <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-[rgb(0_0_0_/_0.6)] backdrop-blur-[2px]">
               <div className="mx-auto max-w-sm text-center">
                 <div className="text-sm text-white/80">
-                  Booking unlocks in{" "}
+                  Your 3-day free extension unlocks in{" "}
                   <span className="font-semibold">{formatMMSS(remaining)}</span>.
                 </div>
                 <div className="mt-3">
@@ -219,7 +222,7 @@ export default function BonusCall() {
                     onClick={handleGoBackToVideoClick}
                     className="btn btn-primary"
                   >
-                    Go back to video
+                    Go Back To Video
                   </button>
                 </div>
               </div>
@@ -227,6 +230,7 @@ export default function BonusCall() {
           )}
 
           <div className={unlocked ? "" : "pointer-events-none blur-[1px]"}>
+            {/* Use this form to collect “why were you canceling / what do you need” + confirm they want to stay */}
             <TypeformInline formId="01K8NV9S6T9VKEPWMEXDEXZTMR" />
           </div>
         </div>
