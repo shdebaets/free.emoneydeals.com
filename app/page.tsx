@@ -230,9 +230,23 @@ export default function BonusCall() {
           )}
 
           <div className={unlocked ? "" : "pointer-events-none blur-[1px]"}>
-            {/* Use this form to collect “why were you canceling / what do you need” + confirm they want to stay */}
+            {/* In Typeform, set the post-submit redirect to the Whop orders/settings URL if you want an automatic reroute */}
             <TypeformInline formId="01K8NV9S6T9VKEPWMEXDEXZTMR" />
           </div>
+
+          {/* Bottom instruction + direct link */}
+          <p className="mt-4 text-center text-xs text-white/60">
+            After you submit this form,{" "}
+            <a
+              href="https://whop.com/@me/settings/orders/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-magenta underline"
+            >
+              uncancel / update payment
+            </a>{" "}
+            to claim your free 3-day extension.
+          </p>
         </div>
       </section>
 
