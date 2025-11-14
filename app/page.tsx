@@ -135,7 +135,7 @@ export default function BonusCall() {
 
           <p className="mt-2 text-center text-[11px] text-white/60">
             {unlocked
-              ? "Unlocked — scroll below to activate."
+              ? "Unlocked - scroll below to activate."
               : "Your 3-day extension unlocks when the timer hits zero."}
           </p>
         </div>
