@@ -30,36 +30,11 @@ async function trackEvent(event: string) {
   }
 }
 
-// ——— TYPEFORM INLINE (no external package needed) ———
-function TypeformInline({ formId }: { formId: string }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const existing = document.querySelector<HTMLScriptElement>("script[data-tf-embed]");
-    if (!existing) {
-      const s = document.createElement("script");
-      s.src = "//embed.typeform.com/next/embed.js";
-      s.async = true;
-      s.defer = true;
-      s.setAttribute("data-tf-embed", "1");
-      document.body.appendChild(s);
-    }
-  }, []);
-
-  return (
-    <div
-      ref={containerRef}
-      className="min-h-[700px] w-full"
-      data-tf-live={formId}
-    />
-  );
-}
-
 export default function BonusCall() {
-  const bookRef = useRef<HTMLDivElement | null>(null);
   const vslRef = useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
 
-  // Simple wall-clock countdown
+  // Timer logic
   const [remaining, setRemaining] = useState(REQUIRED_SECONDS);
   const unlocked = remaining <= 0;
   const startAtRef = useRef<number | null>(null);
@@ -74,43 +49,13 @@ export default function BonusCall() {
     return () => clearInterval(id);
   }, []);
 
-  // Track scroll events (kept)
-  useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout;
-    const handleScroll = () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        trackEvent("scroll");
-      }, 500);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      clearTimeout(scrollTimeout);
-    };
-  }, []);
-
-  const scrollToBooking = () => {
+  const scrollToUnlock = () => {
     if (unlocked) {
-      bookRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      sectionRef.current?.scrollIntoView({ behavior: "smooth" });
     } else {
-      trackEvent("unlock_in_button");
-      vslRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      trackEvent("scroll_to_locked_section");
+      vslRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  };
-
-  const handleKeepWatchingClick = () => {
-    trackEvent("keep_watching_to_unlock");
-    scrollToBooking();
-  };
-
-  const handleGoBackToVideoClick = () => {
-    trackEvent("go_back_to_video");
-    vslRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handlePlayVideo = () => {
-    trackEvent("play_video_button");
   };
 
   return (
@@ -127,7 +72,7 @@ export default function BonusCall() {
             </div>
 
             <button
-              onClick={scrollToBooking}
+              onClick={scrollToUnlock}
               className="btn btn-primary btn-sm"
               aria-disabled={!unlocked}
               title={
@@ -158,95 +103,78 @@ export default function BonusCall() {
         </motion.h1>
 
         <p className="mt-3 text-center text-sm text-white/80">
-          Watch this short video to see how to actually use your membership. Once
-          the timer hits zero, you&apos;ll unlock a{" "}
-          <span className="font-semibold">3-day free extension</span> to stay in
-          the community instead of canceling.
+          Watch this short video to see how to use your membership the right way.  
+          When the timer hits zero, you’ll unlock your{" "}
+          <span className="font-semibold">3-day free extension</span>.
         </p>
 
         <div ref={vslRef} className="card mt-5 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <WistiaVSL
-                mediaId="gx53ks9jkf"
-                caption="How to use eMoney the right way so you actually get results"
-                onPlayClick={handlePlayVideo}
-                onEvents={{
-                  play: () => trackEvent("wistia_play"),
-                  pause: () => trackEvent("wistia_pause"),
-                  quartile: (_pct) => {},
-                }}
-              />
-            </div>
-          </div>
+          <WistiaVSL
+            mediaId="gx53ks9jkf"
+            caption="How to use eMoney the right way so you actually get results"
+            onPlayClick={() => trackEvent("wistia_play")}
+            onEvents={{
+              play: () => trackEvent("wistia_play"),
+              pause: () => trackEvent("wistia_pause"),
+              quartile: () => {},
+            }}
+          />
 
           <div className="mt-3 grid gap-2 text-sm text-white/80">
-            
+           
           </div>
 
           <button
-            onClick={handleKeepWatchingClick}
+            onClick={scrollToUnlock}
             className="btn btn-primary mt-4 w-full hover:shadow-glow"
           >
-            {unlocked ? "I Want My 3 Free Days & To Stay" : "Keep Watching To Unlock 3 Free Days"}
+            {unlocked
+              ? "Claim My 3 Free Days"
+              : "Keep Watching To Unlock 3 Free Days"}
           </button>
 
           <p className="mt-2 text-center text-[11px] text-white/60">
             {unlocked
-              ? "You’ve unlocked your extension—confirm below to keep your access + get 3 days free."
-              : "To unlock your 3-day free extension, you need to finish the key parts of this video."}
+              ? "Unlocked — scroll below to activate."
+              : "Your 3-day extension unlocks when the timer hits zero."}
           </p>
         </div>
       </section>
 
-      {/* “Uncancel” / 3-Day Extension (Typeform) */}
-      <section ref={bookRef} className="container-tight mt-8">
-        <div className="card relative min-h-[700px] p-4">
+      {/* Uncancel Section */}
+      <section ref={sectionRef} className="container-tight mt-10">
+        <div className="card p-5 relative">
           <h3 className="text-center text-lg font-semibold">
-            Confirm You&apos;re Staying & Activate Your 3 Free Days
+            Activate Your Free 3-Day Extension
           </h3>
           <p className="mt-1 text-center text-sm text-white/70">
-            Fill this out to keep your membership active, get 3 extra days for free,
-            and let us know what support you need to actually get results.
+            Once unlocked, click below to uncancel or update payment and instantly
+            receive your free 3-day extension.
           </p>
 
           {!unlocked && (
             <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-[rgb(0_0_0_/_0.6)] backdrop-blur-[2px]">
-              <div className="mx-auto max-w-sm text-center">
-                <div className="text-sm text-white/80">
-                  Your 3-day free extension unlocks in{" "}
-                  <span className="font-semibold">{formatMMSS(remaining)}</span>.
-                </div>
-                <div className="mt-3">
-                  <button
-                    onClick={handleGoBackToVideoClick}
-                    className="btn btn-primary"
-                  >
-                    Go Back To Video
-                  </button>
-                </div>
+              <div className="text-center text-white/80 text-sm">
+                Unlocks in{" "}
+                <span className="font-semibold">{formatMMSS(remaining)}</span>
               </div>
             </div>
           )}
 
           <div className={unlocked ? "" : "pointer-events-none blur-[1px]"}>
-            {/* In Typeform, set the post-submit redirect to the Whop orders/settings URL if you want an automatic reroute */}
-            <TypeformInline formId="01K8NV9S6T9VKEPWMEXDEXZTMR" />
-          </div>
-
-          {/* Bottom instruction + direct link */}
-          <p className="mt-4 text-center text-xs text-white/60">
-            After you submit this form,{" "}
             <a
               href="https://whop.com/@me/settings/orders/"
               target="_blank"
               rel="noreferrer"
-              className="text-brand-magenta underline"
+              className="btn btn-primary mt-6 w-full text-center"
             >
-              uncancel / update payment
-            </a>{" "}
-            to claim your free 3-day extension.
-          </p>
+              Uncancel / Update Payment
+            </a>
+
+            <p className="mt-3 text-center text-xs text-white/60">
+              Uncancel or update your payment method to claim your free 3-day extension.
+            </p>
+          </div>
         </div>
       </section>
 
