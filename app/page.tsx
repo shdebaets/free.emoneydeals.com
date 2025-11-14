@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import WistiaVSL from "@/components/WistiaVSL";
 
 // ——— CONFIG ———
-const REQUIRED_SECONDS = 600;
+const REQUIRED_SECONDS = 90;
 
 // ——— UTILS ———
 function formatMMSS(s: number) {
